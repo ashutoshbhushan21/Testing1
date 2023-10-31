@@ -200,4 +200,112 @@ nested_table.rows.append(nested_table_row)
 
 
 
+## Creating a  basic structure for Parsing tables
+
+
+
+from bs4 import BeautifulSoup
+from pydantic import BaseModel
+from typing import List, Union
+
+class TableCellContent(BaseModel):
+    content: Union[str, 'NestedTable']
+
+class TableCell(BaseModel):
+    contents: List[TableCellContent]
+
+class TableRow(BaseModel):
+    cells: List[TableCell]
+    is_header: bool
+
+class Table(BaseModel):
+    rows: List[TableRow]
+
+class NestedTable(BaseModel):
+    tables: List[Table]
+
+def parse_html(html):
+    soup = BeautifulSoup(html, 'html.parser')
+    tables = soup.find_all('table')
+    parsed_tables = []
+
+    for table in tables:
+        parsed_table = parse_table(table)
+        if parsed_table:
+            parsed_tables.append(parsed_table)
+
+    return parsed_tables
+
+def parse_table(table):
+    parsed_table = Table(rows=[])
+    rows = table.find_all('tr')
+
+    for row in rows:
+        parsed_row = parse_row(row)
+        parsed_table.rows.append(parsed_row)
+
+    if not parsed_table.rows:
+        return None
+
+    return parsed_table
+
+def parse_row(row):
+    cells = row.find_all(['th', 'td'])
+    is_header = 'th' in row.name
+    parsed_row = TableRow(cells=[], is_header=is_header)
+
+    for cell in cells:
+        parsed_cell = parse_cell(cell)
+        parsed_row.cells.append(parsed_cell)
+
+    return parsed_row
+
+def parse_cell(cell):
+    contents = []
+
+    for content in cell.contents:
+        if content.name == 'table':
+            nested_table = parse_table(content)
+            if nested_table:
+                contents.append(TableCellContent(content=NestedTable(tables=[nested_table])))
+        else:
+            text = content.get_text(strip=True)
+            if text:
+                contents.append(TableCellContent(content=text))
+
+    return TableCell(contents=contents)
+
+# Example HTML
+html = """
+<table>
+   <tr>
+       <th>Header 1</th>
+       <th>Header 2</th>
+   </tr>
+   <tr>
+       <td>Row 1 Cell 1</td>
+       <td>
+           <table>
+               <tr>
+                   <th>Nested Header 1</th>
+                   <th>Nested Header 2</th>
+               </tr>
+               <tr>
+                   <td>Nested Row 1 Cell 1</td>
+                   <td>Nested Row 1 Cell 2</td>
+               </tr>
+           </table>
+       Row 1 Cell 2</td>
+   </tr>
+</table>
+"""
+
+parsed_tables = parse_html(html)
+
+for parsed_table in parsed_tables:
+    print(parsed_table.json(indent=2))
+
+
+
+
 
