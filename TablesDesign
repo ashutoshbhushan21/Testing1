@@ -1,0 +1,203 @@
+from typing import List, Union
+from pydantic import BaseModel
+from __future__ import annotations
+
+class Table(BaseModel):
+    rows: List[TableRow]
+
+class NestedTable(BaseModel):
+    tables: List[Table]
+
+class TableCellContent(BaseModel):
+    content: Union[str, NestedTable]
+
+class TableCell(BaseModel):
+    contents: List[TableCellContent]
+
+class TableRow(BaseModel):
+    cells: List[TableCell]
+    is_header: bool
+
+# No need to call update_forward_refs() since we have used __future__.annotations
+
+
+## Example of a Simple table initialized to the Pydantic object
+
+simple_table = Table(
+    rows=[
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Header 1")]),
+                TableCell(contents=[TableCellContent(content="Header 2")])
+            ],
+            is_header=True
+        ),
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Row 1 Cell 1")]),
+                TableCell(contents=[TableCellContent(content="Row 1 Cell 2")])
+            ],
+            is_header=False
+        )
+    ]
+)
+
+
+## Example of a Nested Table initalized to the Pydantic object
+
+nested_table = Table(
+    rows=[
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Header 1")]),
+                TableCell(contents=[TableCellContent(content="Header 2")])
+            ],
+            is_header=True
+        ),
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Row 1 Cell 1")]),
+                TableCell(contents=[TableCellContent(content="Row 1 Cell 2")])
+            ],
+            is_header=False
+        ),
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Row 2 Cell 1")]),
+                TableCell(contents=[TableCellContent(content=NestedTable(
+                    tables=[
+                        Table(
+                            rows=[
+                                TableRow(
+                                    cells=[
+                                        TableCell(contents=[TableCellContent(content="Nested Header 1")]),
+                                        TableCell(contents=[TableCellContent(content="Nested Header 2")])
+                                    ],
+                                    is_header=True
+                                ),
+                                TableRow(
+                                    cells=[
+                                        TableCell(contents=[TableCellContent(content="Nested Row 1 Cell 1")]),
+                                        TableCell(contents=[TableCellContent(content="Nested Row 1 Cell 2")])
+                                    ],
+                                    is_header=False
+                                )
+                            ]
+                        )
+                    ]
+                ))])
+            ],
+            is_header=False
+        ),
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Row 3 Cell 1")]),
+                TableCell(contents=[TableCellContent(content="Row 3 Cell 2")])
+            ],
+            is_header=False
+        )
+    ]
+)
+
+
+###Nested Table with contents before and after Nested table in the cell 
+
+
+
+# Existing code for nested_table (as provided)
+nested_table = Table(
+    rows=[
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Header 1")]),
+                TableCell(contents=[TableCellContent(content="Header 2")])
+            ],
+            is_header=True
+        ),
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Row 1 Cell 1")]),
+                TableCell(contents=[TableCellContent(content="Row 1 Cell 2")])
+            ],
+            is_header=False
+        ),
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Row 2 Cell 1")]),
+                TableCell(contents=[TableCellContent(content=NestedTable(
+                    tables=[
+                        Table(
+                            rows=[
+                                TableRow(
+                                    cells=[
+                                        TableCell(contents=[TableCellContent(content="Nested Header 1")]),
+                                        TableCell(contents=[TableCellContent(content="Nested Header 2")])
+                                    ],
+                                    is_header=True
+                                ),
+                                TableRow(
+                                    cells=[
+                                        TableCell(contents=[TableCellContent(content="Nested Row 1 Cell 1")]),
+                                        TableCell(contents=[TableCellContent(content="Nested Row 1 Cell 2")])
+                                    ],
+                                    is_header=False
+                                )
+                            ]
+                        )
+                    ]
+                ))])
+            ],
+            is_header=False
+        ),
+        TableRow(
+            cells=[
+                TableCell(contents=[TableCellContent(content="Row 3 Cell 1")]),
+                TableCell(contents=[TableCellContent(content="Row 3 Cell 2")])
+            ],
+            is_header=False
+        )
+    ]
+)
+
+# Expanding the nested_table
+# Create a new TableRow for the nested table
+nested_table_row = TableRow(
+    cells=[
+        TableCell(contents=[
+            TableCellContent(content="Text before nested table")
+        ]),
+        TableCell(contents=[
+            TableCellContent(content=NestedTable(
+                tables=[
+                    Table(
+                        rows=[
+                            TableRow(
+                                cells=[
+                                    TableCell(contents=[TableCellContent(content="Nested Header 1")]),
+                                    TableCell(contents=[TableCellContent(content="Nested Header 2")])
+                                ],
+                                is_header=True
+                            ),
+                            TableRow(
+                                cells=[
+                                    TableCell(contents=[TableCellContent(content="Nested Row 1 Cell 1")]),
+                                    TableCell(contents=[TableCellContent(content="Nested Row 1 Cell 2")])
+                                ],
+                                is_header=False
+                            )
+                        ]
+                    )
+                ]
+            )),
+            TableCellContent(content="Text after nested table")
+        ])
+    ],
+    is_header=False
+)
+
+# Append the new TableRow to the existing nested_table
+nested_table.rows.append(nested_table_row)
+
+
+
+
