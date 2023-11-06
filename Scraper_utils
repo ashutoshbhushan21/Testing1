@@ -1,3 +1,6 @@
+=TRIM(MID(A1, MIN(SEARCH({"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"}, A1&"ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 27), LEN(A1)))
+
+
 soup = BeautifulSoup(html, 'html.parser')
 
 def find_deepest_tr_with_text(element, target_text):
