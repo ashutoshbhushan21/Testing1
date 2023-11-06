@@ -1,0 +1,26 @@
+soup = BeautifulSoup(html, 'html.parser')
+
+def find_deepest_tr_with_text(element, target_text):
+    result = None
+    
+    def dfs(current_element, current_depth):
+        nonlocal result
+        if current_element.name == 'tr' and target_text in current_element.get_text():
+            if result is None or current_depth > result[1]:
+                result = (current_element, current_depth)
+        
+        for child in current_element.children:
+            if child and child.name:
+                dfs(child, current_depth + 1)
+    
+    dfs(element, 0)
+    
+    return result[0] if result else None
+
+target_text = "XYZ"
+deepest_tr = find_deepest_tr_with_text(soup, target_text)
+
+if deepest_tr:
+    print("Deepest <tr> tag containing", target_text, ":", deepest_tr)
+else:
+    print("No <tr> tag containing", target_text, "found.")
