@@ -80,3 +80,44 @@ def find_deepest_tag_and_tr_with_text(html, target_text):
 # print("Deepest tag containing 'XYZ':", deepest_tag)
 # print("Deepest <tr> tag containing a tag with 'XYZ':", deepest_tr)
 
+
+
+
+
+
+from bs4 import BeautifulSoup, NavigableString, Tag
+
+def get_soup_between_tags(start_tag, end_tag):
+    """
+    Creates a BeautifulSoup object containing elements between two specific tags.
+
+    Args:
+    start_tag (bs4.element.Tag): The starting tag.
+    end_tag (bs4.element.Tag): The ending tag.
+
+    Returns:
+    BeautifulSoup: A new soup object containing elements between the start_tag and end_tag.
+    """
+    elements = []
+    current_tag = start_tag
+
+    while current_tag and current_tag != end_tag:
+        if isinstance(current_tag, (NavigableString, Tag)):
+            elements.append(current_tag)
+        current_tag = current_tag.find_next_sibling()
+
+    # Creating a new soup object with the collected elements
+    new_soup = BeautifulSoup('', 'html.parser')
+    for element in elements:
+        new_soup.append(element)
+
+    return new_soup
+
+# Example usage
+# html_content = "<your_html_content>"
+# soup = BeautifulSoup(html_content, 'html.parser')
+# start_tag = <your_method_to_find_start_tag>
+# end_tag = <your_method_to_find_end_tag>
+# soup_between = get_soup_between_tags(start_tag, end_tag)
+# print(soup_between)
+
