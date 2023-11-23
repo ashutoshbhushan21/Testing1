@@ -36,6 +36,8 @@ else:
 
 from bs4 import BeautifulSoup, NavigableString
 
+from bs4 import BeautifulSoup, NavigableString
+
 def find_deepest_tag_and_tr_with_text(html, target_text):
     soup = BeautifulSoup(html, 'html.parser')
 
@@ -45,24 +47,36 @@ def find_deepest_tag_and_tr_with_text(html, target_text):
     def dfs(current_element, current_depth):
         nonlocal deepest_tag_result, deepest_tr_result
 
+        # Check if current element contains target text
         if target_text in current_element.get_text():
             if isinstance(current_element, NavigableString):
                 current_tag = current_element.parent
             else:
                 current_tag = current_element
 
+            # Update deepest tag if deeper tag is found
             if deepest_tag_result is None or current_depth > deepest_tag_result[1]:
                 deepest_tag_result = (current_tag, current_depth)
 
+            # Update deepest tr if deeper tr is found
             tr_ancestor = current_tag.find_parent('tr')
             if tr_ancestor and (deepest_tr_result is None or current_depth > deepest_tr_result[1]):
                 deepest_tr_result = (tr_ancestor, current_depth)
 
-        for child in current_element.children:
-            if child and hasattr(child, 'name'):
-                dfs(child, current_depth + 1)
+        # Proceed only if current element is a tag and can have children
+        if hasattr(current_element, 'children'):
+            for child in current_element.children:
+                if child and hasattr(child, 'name'):
+                    dfs(child, current_depth + 1)
 
     dfs(soup, 0)
 
     return (deepest_tag_result[0] if deepest_tag_result else None,
             deepest_tr_result[0] if deepest_tr_result else None)
+
+# Example usage
+# html_content = "<your_html_content>"
+# deepest_tag, deepest_tr = find_deepest_tag_and_tr_with_text(html_content, "XYZ")
+# print("Deepest tag containing 'XYZ':", deepest_tag)
+# print("Deepest <tr> tag containing a tag with 'XYZ':", deepest_tr)
+
