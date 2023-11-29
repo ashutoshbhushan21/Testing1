@@ -1,71 +1,33 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 
-def find_same_page_links(html_soup):
-    # Create a new BeautifulSoup object for parsing
-    soup = BeautifulSoup(html_soup, 'html.parser')
+def get_soup_between_tags(subsection, start_tag, end_tag=None):
+    """
+    Creates a BeautifulSoup object containing elements between two specific tags within a subsection of a soup.
 
-    # Find all <tr> tags that contain exactly 2 <td> tags
-    tr_tags = soup.find_all('tr')
-    filtered_tr_tags = [tr for tr in tr_tags if len(tr.find_all('td')) == 2]
+    Args:
+    subsection (bs4.element.Tag): The subsection of the soup to search within.
+    start_tag (bs4.element.Tag): The starting tag.
+    end_tag (bs4.element.Tag): The ending tag.
 
-    # Initialize a list to store the resulting <a> tag soups
-    result_a_soups = []
+    Returns:
+    BeautifulSoup: A new soup object containing elements between the start_tag and end_tag within the subsection.
+    """
+    elements = []
+    current_tag = start_tag
+    if end_tag:
+        while current_tag and current_tag != end_tag:
+            if isinstance(current_tag, (NavigableString, Tag)):
+                elements.append(current_tag)
+            current_tag = current_tag.find_next_sibling()
+    else:
+        while current_tag:
+            if isinstance(current_tag, (NavigableString, Tag)):
+                elements.append(current_tag)
+            current_tag = current_tag.find_next_sibling()
 
-    # Iterate through filtered <tr> tags
-    for tr_tag in filtered_tr_tags:
-        # Find the <strong> tag within the <tr> tag
-        strong_tag = tr_tag.find('strong')
+    # Creating a new soup object with the collected elements
+    new_soup = BeautifulSoup('', 'html.parser')
+    for element in elements:
+        new_soup.append(element)
 
-        if strong_tag:
-            # Find all <a> tags within the <strong> tag
-            a_tags = strong_tag.find_all('a', href=True)
-        else:
-            # If <strong> tag is not present, find all <a> tags within the <td> tags
-            td_tags = tr_tag.find_all('td')
-            a_tags = [a_tag for td_tag in td_tags for a_tag in td_tag.find_all('a', href=True)]
-
-        # Check if the href attribute of the <a> tag points to the same page
-        same_page_links = [a_tag for a_tag in a_tags if a_tag['href'].startswith('#')]
-
-        # Add the matching <a> tags to the result list
-        result_a_soups.extend(same_page_links)
-
-    # Create a new BeautifulSoup object from the result list of <a> tags
-    result_soup = BeautifulSoup('\n'.join(map(str, result_a_soups)), 'html.parser')
-
-    return result_soup
-
-# Example usage:
-html_string = """
-<html>
-    <body>
-        <table>
-            <tr>
-                <td>
-                    <strong>
-                        <a href="#link1">Link 1</a>
-                        <a href="#link2">Link 2</a>
-                    </strong>
-                </td>
-                <td>
-                    <a href="#link3">Link 3</a>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <a href="#link4">Link 4</a>
-                </td>
-                <td>
-                    <strong>
-                        <a href="#link5">Link 5</a>
-                    </strong>
-                </td>
-            </tr>
-        </table>
-    </body>
-</html>
-"""
-
-soup = BeautifulSoup(html_string, 'html.parser')
-same_page_links_soup = find_same_page_links(soup)
-print(same_page_links_soup)
+    return new_soup
