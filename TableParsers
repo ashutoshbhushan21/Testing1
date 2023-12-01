@@ -1,0 +1,187 @@
+from bs4 import BeautifulSoup
+
+# Function to identify and reconstruct nested tables
+def reconstruct_tables(rows):
+    tables = []
+    current_table = []
+    current_row = []
+
+    for row in rows:
+        cells = row.find_all('td')
+
+        # Initialize variables for table detection
+        is_table_start = False
+        current_rowspan = 1  # Default rowspan
+        current_colspan = 1  # Default colspan
+
+        for cell in cells:
+            # Check for rowspan and colspan
+            if cell.has_attr('rowspan'):
+                current_rowspan = int(cell['rowspan'])
+            else:
+                current_rowspan = 1
+
+            if cell.has_attr('colspan'):
+                current_colspan = int(cell['colspan'])
+            else:
+                current_colspan = 1
+
+            # Check for background color to identify table header
+            bg_color = cell.get('bgcolor')  # Replace with the actual attribute name for background color
+            is_table_header = bg_color is not None and bg_color != "#FFFFFF"  # Check for non-white color
+
+            # Detect start of a table based on conditions
+            if current_rowspan > 1 or current_colspan > 1 or is_table_header:
+                is_table_start = True
+
+            # Append the cell to the current row if it's part of the table
+            if is_table_start:
+                current_row.append(cell)
+
+            # Check for the end of the table
+            if current_colspan == 1:
+                if current_row:  # Check if the row is not empty
+                    current_table.append(current_row)
+                    current_row = []
+
+        # Check for the end of the table row
+        if not is_table_start:
+            if current_table:  # Check if the table is not empty
+                tables.append(current_table)
+                current_table = []
+
+    # Reconstruct tables
+    nested_tables = []
+    for table_data in tables:
+        table_html = '<table>'
+        for rows in table_data:
+            table_html += '<tr>'
+            for cell in rows:
+                table_html += str(cell)
+            table_html += '</tr>'
+        table_html += '</table>'
+        nested_tables.append(table_html)
+
+    return nested_tables
+
+# Assuming html_content contains your HTML data
+soup = BeautifulSoup(html_content, 'html.parser')
+
+# Find all table rows
+table_rows = soup.find_all('tr')
+
+# Reconstruct tables
+final_tables = reconstruct_tables(table_rows)
+
+# Now 'final_tables' contains the corrected HTML for all nested tables
+for table in final_tables:
+    print(table)
+
+
+
+
+
+
+
+
+
+######################################################
+
+# Pseudocode using BeautifulSoup for HTML parsing
+from bs4 import BeautifulSoup
+
+# Parse the poorly structured HTML
+html = '<your poorly structured HTML>'
+soup = BeautifulSoup(html, 'html.parser')
+
+# Function to process tables recursively
+def process_table(table):
+    # Process rows and cells in the table
+    for row in table.find_all('tr'):
+        # Process cells within the row
+        for cell in row.find_all('td'):
+            # Extract cell content, row spans, column spans, and background color
+            # Identify headers based on background color or other criteria
+            
+            # Reconstruct the proper table structure based on identified headers
+            
+            # If nested table detected based on background color
+            if nested_table_detected:
+                nested_table = cell.find('table')
+                if nested_table:
+                    process_table(nested_table)  # Recursive call for nested tables
+
+# Find all tables in the parsed HTML
+tables = soup.find_all('table')
+
+# Process each table
+for table in tables:
+    process_table(table)
+
+#################################################
+
+
+class TableInfo:
+    def __init__(self, table, level):
+        self.table = table
+        self.level = level
+
+
+def start_table(level):
+    # Add logic to start a new table with appropriate indentation based on level
+    pass
+
+def end_table(level):
+    # Add logic to end a table with appropriate indentation based on level
+    pass
+
+
+def process_table_recursive(table_info):
+    table = table_info.table
+
+    # Process rows and cells in the table
+    for row in table.find_all('tr'):
+        # Process cells within the row
+        for cell in row.find_all('td'):
+            # Extract cell content, row spans, column spans, and background color
+            # Identify headers based on background color or other criteria
+
+            # Reconstruct the proper table structure based on identified headers
+
+            # If nested table detected based on background color
+            if nested_table_detected:
+                nested_table = cell.find('table')
+                if nested_table:
+                    # Push the current table onto the stack
+                    table_stack.append(TableInfo(table, len(table_stack)))
+                    # Process nested table recursively
+                    process_table_recursive(TableInfo(nested_table, len(table_stack)))
+                    # Pop the table from the stack after processing the nested table
+                    table_stack.pop()
+
+    # Start and end the table appropriately
+    start_table(table_info.level)
+    # Process table content here
+    end_table(table_info.level)
+
+# Find all tables in the parsed HTML
+tables = soup.find_all('table')
+
+# Process each table
+for table in tables:
+    process_table_recursive(TableInfo(table, 0))  # Start with level 0 for the outermost table
+
+
+
+
+
+
+
+
+
+
+
+
+                    table_stack.pop()
+
+
