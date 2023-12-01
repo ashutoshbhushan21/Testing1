@@ -309,3 +309,66 @@ for parsed_table in parsed_tables:
 
 
 
+#######################################Reconsutructing tables#########################
+
+
+
+from bs4 import BeautifulSoup
+
+# Function to identify and reconstruct nested tables
+def reconstruct_tables(rows):
+    tables = []
+    current_table = []
+    for row in rows:
+        cells = row.find_all('td')
+
+        # Identify table boundaries based on rowspan, colspan, and background color
+        # Logic to detect table structure and boundaries goes here
+
+        # Append cells to current table
+        current_table.append(cells)
+
+        # If you detect end of a table based on your logic:
+        if end_of_table:
+            tables.append(current_table)
+            current_table = []
+
+    # Reconstruct nested tables
+    nested_tables = []
+    for table_data in tables:
+        table_html = '<table>'
+        for row in table_data:
+            table_html += '<tr>'
+            for cell in row:
+                # Check if the cell contains nested tables
+                nested = cell.find_all('table')
+                if nested:
+                    for nested_table in nested:
+                        # Recursively reconstruct nested tables
+                        nested_table_rows = nested_table.find_all('tr')
+                        nested_table_html = reconstruct_tables(nested_table_rows)
+                        table_html += nested_table_html
+                else:
+                    table_html += str(cell)
+            table_html += '</tr>'
+        table_html += '</table>'
+        nested_tables.append(table_html)
+
+    return nested_tables
+
+# Assuming html_content contains your HTML data
+soup = BeautifulSoup(html_content, 'html.parser')
+
+# Find all table rows
+table_rows = soup.find_all('tr')
+
+# Reconstruct tables
+final_tables = reconstruct_tables(table_rows)
+
+# Now 'final_tables' contains the corrected HTML for all nested tables
+for table in final_tables:
+    print(table)
+
+
+
+
