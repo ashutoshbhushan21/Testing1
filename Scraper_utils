@@ -121,3 +121,40 @@ def get_soup_between_tags(start_tag, end_tag):
 # soup_between = get_soup_between_tags(start_tag, end_tag)
 # print(soup_between)
 
+
+
+
+### to find all deepest td and tr tags
+
+from bs4 import BeautifulSoup, NavigableString, Tag
+
+def dfs_find_deepest_td_and_tr(element, target_text, current_depth, td_records):
+    if isinstance(element, NavigableString):
+        return
+    if element.name == "td" and target_text in element.text:
+        tr_parent = element.find_parent('tr')
+        td_records.append((current_depth, element, tr_parent))
+    for child in element.children:
+        if isinstance(child, Tag):
+            dfs_find_deepest_td_and_tr(child, target_text, current_depth + 1, td_records)
+
+def find_unique_deepest_td_and_tr(soup, target_text):
+    td_records = []
+    dfs_find_deepest_td_and_tr(soup, target_text, 0, td_records)
+
+    if not td_records:
+        return []
+
+    max_depth = max(record[0] for record in td_records)
+    unique_deepest_td_tr = [(td, tr) for depth, td, tr in td_records if depth == max_depth]
+
+    return list(set(unique_deepest_td_tr))  # Remove duplicates if any
+
+# Initialize BeautifulSoup
+soup = BeautifulSoup(html_doc, 'html.parser')
+
+# Find all unique deepest 'td' and their 'tr' parents
+deepest_td_tr_pairs = find_unique_deepest_td_and_tr(soup, "ABC")
+
+# deepest_td_tr_pairs contains tuples of (td, tr) for each unique deepest 'td' containing 'ABC' and its nearest 'tr' parent
+
