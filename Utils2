@@ -3,53 +3,6 @@ from bs4 import BeautifulSoup
 def extract_html_content_advanced_v4(html, start_attrs, end_attrs):
     soup = BeautifulSoup(html, 'html.parser')
 
-    # Find the start and end tags based on attributes
-    start = soup.find(attrs=start_attrs)
-    end = soup.find(attrs=end_attrs)
-
-    if not start or not end:
-        return "Start or end tag not found."
-
-    # Check if the start tag comes before the end tag
-    if soup.index(start) > soup.index(end):
-        return "Start tag comes after end tag."
-
-    def collect_content(current, end, content, found_start=False):
-        while current and current != end:
-            if found_start:
-                content.add(str(current))
-
-            # Move to next element in the tree
-            next_element = current.next_element
-            while next_element and (next_element in content or next_element == current):
-                next_element = next_element.next_element
-
-            current = next_element
-            found_start = True
-
-        return content
-
-    collected_content = collect_content(start, end, set())
-    return ''.join(collected_content)
-
-# Test the revised function with a complex HTML structure
-html_example_complex = '''...'''  # This should be your HTML content
-extract_html_content_advanced_v4(html_example_complex, {'id': 'start'}, {'id': 'end'})
-
-
-
-
-
-
-
-
-
-
-from bs4 import BeautifulSoup
-
-def extract_html_content_advanced_v4(html, start_attrs, end_attrs):
-    soup = BeautifulSoup(html, 'html.parser')
-
     start = soup.find(attrs=start_attrs)
     end = soup.find(attrs=end_attrs)
 
@@ -57,10 +10,15 @@ def extract_html_content_advanced_v4(html, start_attrs, end_attrs):
         return "Start or end tag not found."
 
     def collect_content(current, end):
-        content = [str(current)]  # Start with the start tag
-        current = current.next_element  # Move to the next element after the start tag
-        while current and current != end:  # Collect until the end tag (but not including it)
-            content.append(str(current))
+        content = [str(current)]  # Include the start tag
+        parents = set([current])  # Keep track of parent elements
+        current = current.next_element
+
+        while current and current != end:
+            # Check if current element is a direct child of an already included element
+            if current.parent not in parents:
+                content.append(str(current))
+                parents.add(current)
             current = current.next_element
         return content
 
@@ -70,4 +28,3 @@ def extract_html_content_advanced_v4(html, start_attrs, end_attrs):
 # Example use
 html_example_complex = '''...'''  # Your HTML content
 extract_html_content_advanced_v4(html_example_complex, {'id': 'start'}, {'id': 'end'})
-
