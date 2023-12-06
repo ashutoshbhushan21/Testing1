@@ -1,0 +1,37 @@
+from bs4 import BeautifulSoup
+
+def extract_html_content_advanced_v4(html, start_attrs, end_attrs):
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Find the start and end tags based on attributes
+    start = soup.find(attrs=start_attrs)
+    end = soup.find(attrs=end_attrs)
+
+    if not start or not end:
+        return "Start or end tag not found."
+
+    # Check if the start tag comes before the end tag
+    if soup.index(start) > soup.index(end):
+        return "Start tag comes after end tag."
+
+    def collect_content(current, end, content, found_start=False):
+        while current and current != end:
+            if found_start:
+                content.add(str(current))
+
+            # Move to next element in the tree
+            next_element = current.next_element
+            while next_element and (next_element in content or next_element == current):
+                next_element = next_element.next_element
+
+            current = next_element
+            found_start = True
+
+        return content
+
+    collected_content = collect_content(start, end, set())
+    return ''.join(collected_content)
+
+# Test the revised function with a complex HTML structure
+html_example_complex = '''...'''  # This should be your HTML content
+extract_html_content_advanced_v4(html_example_complex, {'id': 'start'}, {'id': 'end'})
