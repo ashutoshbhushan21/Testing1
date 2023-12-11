@@ -1,0 +1,23 @@
+def adjust_dict_keys(input_dict, items_to_remove):
+    keys_to_remove = []
+    for key, value in input_dict.items():
+        if value in items_to_remove:
+            keys_to_remove.append(key)
+
+    for key in keys_to_remove:
+        input_dict.pop(key)
+
+    new_dict = {}
+    new_key = 1
+    for key, value in input_dict.items():
+        new_dict[new_key] = value
+        new_key += 1
+
+    return new_dict
+
+# Example usage:
+my_dict = {1: 'apple', 2: 'banana', 3: 'cherry', 4: 'date', 5: 'elderberry'}
+items_to_remove = ['cherry', 'date']
+
+new_dict = adjust_dict_keys(my_dict, items_to_remove)
+print(new_dict)
