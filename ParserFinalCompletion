@@ -21,3 +21,39 @@ items_to_remove = ['cherry', 'date']
 
 new_dict = adjust_dict_keys(my_dict, items_to_remove)
 print(new_dict)
+
+
+
+#### Deepest p or h1 tag
+
+from bs4 import BeautifulSoup, Tag
+from textdistance import jaro_winkler
+
+def find_deepest_h1_p_with_text(soup, target_text):
+    def dfs(element, current_depth, max_depth_info):
+        if isinstance(element, NavigableString):
+            return
+
+        # Check if the current element is a 'h1' or 'p' tag.
+        if element.name in ["h1", "p"]:
+            element_text = " ".join(x.strip() for x in element.get_text().split(" ") if x.strip())
+            if jaro_winkler(target_text, element_text) > 0.8:
+                if current_depth > max_depth_info["depth"]:
+                    max_depth_info["depth"] = current_depth
+                    max_depth_info["element"] = element
+
+        # Continue the search in children regardless of the current tag.
+        for child in element.children:
+            if isinstance(child, Tag):
+                dfs(child, current_depth + 1, max_depth_info)
+
+    max_depth_info = {"depth": -1, "element": None}
+    dfs(soup, 0, max_depth_info)
+
+    return max_depth_info["element"]
+
+# Example usage:
+# html_content = "<html><body><h1>Similar text</h1><p>Very similar text</p></body></html>"
+# soup = BeautifulSoup(html_content, 'html.parser')
+# deepest_tag = find_deepest_h1_p_with_text(soup, "Target text")
+# print(deepest_tag)
