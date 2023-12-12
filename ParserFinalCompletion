@@ -57,3 +57,31 @@ def find_deepest_h1_p_with_text(soup, target_text):
 # soup = BeautifulSoup(html_content, 'html.parser')
 # deepest_tag = find_deepest_h1_p_with_text(soup, "Target text")
 # print(deepest_tag)
+
+
+
+
+
+
+from bs4 import BeautifulSoup
+
+# Assuming you have a BeautifulSoup object 'soup' already created
+# Find the first <table> tag at depth level 0
+first_table = soup.find('table', recursive=False)
+
+if first_table:
+    # Find all the tags that are siblings of the first <table> tag
+    tags_before_table = list(first_table.find_previous_siblings())
+    
+    # Add the first <table> tag to the list
+    tags_before_table.append(first_table)
+    
+    # Reverse the list to maintain the correct order
+    tags_before_table.reverse()
+    
+    # Now 'tags_before_table' contains all the tags before and including the first <table> tag
+    for tag in tags_before_table:
+        print(tag)
+else:
+    print("No <table> tag found at depth level 0.")
+
