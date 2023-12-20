@@ -1,0 +1,39 @@
+def find_deepest_tag_and_tr_with_text(soup, target_text, _contains=False):
+    deepest_tag_result = None
+    deepest_tr_result = None
+
+    def dfs(current_element, current_depth):
+        nonlocal deepest_tag_result, deepest_tr_result
+
+        # Check if current element matches target text
+        if target_text == current_element.get_text().strip():
+            if isinstance(current_element, NavigableString):
+                current_tag = current_element.parent
+            else:
+                current_tag = current_element
+
+            # Update deepest tag if deeper tag is found
+            if deepest_tag_result is None or current_depth > deepest_tag_result[1]:
+                deepest_tag_result = (current_tag, current_depth)
+
+            # Find the tr ancestor of the current tag
+            tr_ancestor = current_tag.find_parent('tr')
+            if tr_ancestor:
+                # Find the first td of the tr ancestor
+                first_td = tr_ancestor.find('td')
+                # Check if the current tag is inside the first td
+                if first_td and current_tag in first_td.descendants:
+                    # Update deepest tr if deeper tr is found or if it is the first occurrence
+                    if deepest_tr_result is None or current_depth > deepest_tr_result[1]:
+                        deepest_tr_result = (tr_ancestor, current_depth)
+
+        # Proceed only if current element is a tag and can have children
+        if hasattr(current_element, 'children'):
+            for child in current_element.children:
+                if child and hasattr(child, 'name'):
+                    dfs(child, current_depth + 1)
+
+    dfs(soup, 0)
+
+    return (deepest_tag_result[0] if deepest_tag_result else None,
+            deepest_tr_result[0] if deepest_tr_result else None)
