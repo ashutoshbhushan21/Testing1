@@ -1,0 +1,15 @@
+import tempfile
+
+# Create a temporary HTML file
+with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as temp_file:
+    temp_file.write(html_string.encode("utf-8"))
+    temp_file.seek(0)
+    temp_file_name = temp_file.name
+
+# temp_file_name contains the path to the temporary HTML file
+
+
+import webbrowser
+
+# Open the temporary HTML file in the default web browser
+webbrowser.open("file://" + temp_file_name)
