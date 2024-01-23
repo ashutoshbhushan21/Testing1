@@ -1,0 +1,142 @@
+from abc import ABC, abstractmethod
+
+# Base classes
+class RetrievalStrategy(ABC):
+    async def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    @abstractmethod
+    async def retrieve(self, url):
+        pass
+
+class SynthesisStrategy(ABC):
+    async def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    @abstractmethod
+    async def synthesize(self, document_ids):
+        pass
+
+# Implementations of the strategies
+class SimpleRetrievalStrategy(RetrievalStrategy):
+    async def retrieve(self, url):
+        async with self.session.get(url) as response:
+            response.raise_for_status()
+            return await response.json()
+
+class AdvancedRetrievalStrategy(RetrievalStrategy):
+    async def retrieve(self, url):
+        async with self.session.get(url) as response:
+            response.raise_for_status()
+            return await response.json()
+
+class SimpleSynthesisStrategy(SynthesisStrategy):
+    async def synthesize(self, document_ids):
+        return 'Simple prompt based on ' + ', '.join(document_ids)
+
+class ComplexSynthesisStrategy(SynthesisStrategy):
+    async def synthesize(self, document_ids):
+        return 'Complex prompt based on ' + ', '.join(document_ids)
+
+
+
+
+
+from fastapi import FastAPI, Depends, HTTPException, StreamingResponse
+import aiohttp
+
+app = FastAPI()
+
+@app.on_event("startup")
+async def startup_event():
+    app.state.http_client = aiohttp.ClientSession()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await app.state.http_client.close()
+
+async def get_http_client() -> aiohttp.ClientSession:
+    return app.state.http_client
+
+@app.post("/process-request")
+async def process_request(http_client: aiohttp.ClientSession = Depends(get_http_client)):
+    # Choose and initialize strategies
+    retrieval_strategy = SimpleRetrievalStrategy(http_client)
+    synthesis_strategy = SimpleSynthesisStrategy(http_client)
+
+    # Use strategies to retrieve document IDs and synthesize a prompt
+    api2_url = "http://api2.example.com/get-ids"
+    document_ids = await retrieval_strategy.retrieve(api2_url)
+    prompt = await synthesis_strategy.synthesize(document_ids)
+
+    # Stream response from another API
+    api3_url = "http://api3.example.com/stream-response"
+    return StreamingResponse(stream_response_from_api3(api3_url, prompt, http_client), media_type="text/plain")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+#improvements 
+
+
+
+
+
+pip install aiohttp[speedups]
+@app.on_event("startup")
+async def startup_event():
+    app.state.http_client = aiohttp.ClientSession(http2=True)
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    if not app.state.http_client.closed:
+        await app.state.http_client.close()
+
+
+
+timeout = aiohttp.ClientTimeout(total=30, connect=10, sock_read=10, sock_connect=10)
+app.state.http_client = aiohttp.ClientSession(http2=True, timeout=timeout)
+
+class SimpleRetrievalStrategy(RetrievalStrategy):
+    async def retrieve(self, url):
+        try:
+            async with self.session.get(url) as response:
+                response.raise_for_status()
+                return await response.json()
+        except aiohttp.ClientError as e:
+            # Log and handle client error (e.g., network issues, timeout)
+            # Optionally re-raise or handle it gracefully
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+from fastapi import FastAPI, Depends, HTTPException, StreamingResponse
+import aiohttp
+
+app = FastAPI()
+
+@app.on_event("startup")
+async def startup_event():
+    timeout = aiohttp.ClientTimeout(total=30, connect=10, sock_read=10, sock_connect=10)
+    app.state.http_client = aiohttp.ClientSession(http2=True, timeout=timeout)
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    if not app.state.http_client.closed:
+        await app.state.http_client.close()
+
+# ... Rest of your code including the strategy classes ...
+
+@app.post("/process-request")
+async def process_request(http_client: aiohttp.ClientSession = Depends(get_http_client)):
+    # ... Endpoint logic with error handling ...
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
