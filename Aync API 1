@@ -1,0 +1,152 @@
+from abc import ABC, abstractmethod
+
+class RetrievalStrategy(ABC):
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    @abstractmethod
+    async def retrieve(self, url):
+        pass
+
+class SynthesisStrategy(ABC):
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    @abstractmethod
+    async def synthesize(self, document_ids):
+        pass
+
+
+class SimpleRetrievalStrategy(RetrievalStrategy):
+    async def retrieve(self, url):
+        # Implement simple retrieval logic
+        pass
+
+class AdvancedRetrievalStrategy(RetrievalStrategy):
+    async def retrieve(self, url):
+        # Implement advanced retrieval logic
+        pass
+
+class SimpleSynthesisStrategy(SynthesisStrategy):
+    async def synthesize(self, document_ids):
+        # Implement simple synthesis logic
+        pass
+
+class ComplexSynthesisStrategy(SynthesisStrategy):
+    async def synthesize(self, document_ids):
+        # Implement complex synthesis logic
+        pass
+
+
+
+class SimpleRetrievalStrategy(RetrievalStrategy):
+    async def retrieve(self, url):
+        # Implement simple retrieval logic
+        pass
+
+class AdvancedRetrievalStrategy(RetrievalStrategy):
+    async def retrieve(self, url):
+        # Implement advanced retrieval logic
+        pass
+
+class SimpleSynthesisStrategy(SynthesisStrategy):
+    async def synthesize(self, document_ids):
+        # Implement simple synthesis logic
+        pass
+
+class ComplexSynthesisStrategy(SynthesisStrategy):
+    async def synthesize(self, document_ids):
+        # Implement complex synthesis logic
+        pass
+
+
+
+
+@app.post("/process-request")
+async def process_request(http_client: aiohttp.ClientSession = Depends(get_http_client)):
+    # Determine which strategy to use (could be based on request parameters)
+    retrieval_strategy = SimpleRetrievalStrategy(http_client)
+    synthesis_strategy = SimpleSynthesisStrategy(http_client)
+
+    # Use the strategies
+    document_ids = await retrieval_strategy.retrieve("http://api2.example.com/get-ids")
+    prompt = await synthesis_strategy.synthesize(document_ids)
+
+    # Rest of the logic remains the same
+
+
+
+
+
+
+
+
+
+###########Older Code 
+
+
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import StreamingResponse
+import aiohttp
+import asyncio
+
+app = FastAPI()
+
+# Shared aiohttp ClientSession
+@app.on_event("startup")
+async def startup_event():
+    app.state.http_client = aiohttp.ClientSession()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await app.state.http_client.close()
+
+# Dependency to get the shared session
+async def get_http_client() -> aiohttp.ClientSession:
+    return app.state.http_client
+
+class API2Client:
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    async def fetch_document_ids(self, url):
+        async with self.session.get(url) as response:
+            response.raise_for_status()
+            return await response.json()
+
+class API3Client:
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
+
+    async def fetch_token_count(self, url, prompt):
+        # Implementation remains the same as before
+
+    async def stream_response(self, url, prompt):
+        async with self.session.post(url, json={"prompt": prompt}, stream=True) as response:
+            response.raise_for_status()
+            async for chunk in response.content.iter_any():
+                yield chunk
+
+@app.post("/process-request")
+async def process_request(http_client: aiohttp.ClientSession = Depends(get_http_client)):
+    api2_client = API2Client(http_client)
+    api3_client = API3Client(http_client)
+
+    # Fetch document IDs from API 2
+    document_ids = await api2_client.fetch_document_ids("http://api2.example.com/get-ids")
+    prompt = f"Document IDs: {document_ids}"
+
+    # Fetch token count from API 3
+    token_count = await api3_client.fetch_token_count("http://api3.example.com/get-token-count", prompt)
+
+    if token_count < 4000:
+        return StreamingResponse(api3_client.stream_response("http://api3.example.com/stream-response", prompt), media_type="text/plain")
+    else:
+        new_document_ids = await api2_client.fetch_document_ids("http://api2.example.com/get-ids")
+        new_prompt = f"Document IDs: {new_document_ids}"
+        return StreamingResponse(api3_client.stream_response("http://api3.example.com/stream-response", new_prompt), media_type="text/plain")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
