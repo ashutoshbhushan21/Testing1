@@ -150,3 +150,149 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### Multipart Streaming 
+
+
+
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import StreamingResponse
+import aiohttp
+import asyncio
+import json
+
+app = FastAPI()
+
+class API2Client:
+    # ... initialization and other methods ...
+
+    async def fetch_document_ids(self, url):
+        # ... implementation ...
+
+class API3Client:
+    # ... initialization and other methods ...
+
+    async def stream_response(self, url, prompt):
+        # ... implementation ...
+
+@app.on_event("startup")
+async def startup_event():
+    app.state.http_client = aiohttp.ClientSession()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await app.state.http_client.close()
+
+async def get_http_client() -> aiohttp.ClientSession:
+    return app.state.http_client
+
+async def generate_response(api2_client, api3_client, api2_url, api3_url):
+    # Fetch document IDs from API 2
+    document_ids = await api2_client.fetch_document_ids(api2_url)
+    yield f"Document IDs: {json.dumps(document_ids)}\n"
+
+    # Generate prompt (this can be based on the retrieved document IDs)
+    prompt = f"Document IDs: {document_ids}"
+
+    # Stream response from API 3
+    async for chunk in api3_client.stream_response(api3_url, prompt):
+        yield chunk
+
+@app.post("/process-request")
+async def process_request(http_client: aiohttp.ClientSession = Depends(get_http_client)):
+    api2_client = API2Client(http_client)
+    api3_client = API3Client(http_client)
+
+    api2_url = "http://api2.example.com/get-ids"
+    api3_url = "http://api3.example.com/stream-response"
+
+    return StreamingResponse(generate_response(api2_client, api3_client, api2_url, api3_url), media_type="text/plain")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+async function fetchAndProcess() {
+    const response = await fetch('http://localhost:8000/process-request', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        // Include any necessary request body
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    
+    let { value, done } = await reader.read();
+    while (!done) {
+        console.log(decoder.decode(value, { stream: true }));
+        ({ value, done } = await reader.read());
+    }
+}
+
+fetchAndProcess();
+
+
+
+
+
+
+
+
+
+
+import streamlit as st
+import asyncio
+import aiohttp
+import time
+
+# Background task for handling streaming
+async def stream_data(url, session):
+    async with session.get(url, stream=True) as response:
+        async for chunk in response.content.iter_any():
+            # Process chunk (e.g., append to a file or a database)
+            # ...
+
+# Function to start the background streaming task
+def start_streaming():
+    loop = asyncio.get_event_loop()
+    session = aiohttp.ClientSession(loop=loop)
+    loop.create_task(stream_data("http://your-fastapi-server/process-request", session))
+
+# Streamlit UI
+if st.button('Start Streaming'):
+    start_streaming()
+
+# Loop to update UI
+while True:
+    # Check for new data from the background task and update UI
+    # This could be reading from a file or database where streamed data is stored
+    # ...
+
+    time.sleep(1)  # Adjust the sleep time as needed
+    st.experimental_rerun()  # Rerun the Streamlit app to update the UI
+
