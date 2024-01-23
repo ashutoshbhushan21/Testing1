@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+isfrom abc import ABC, abstractmethod
 
 # Base classes
 class RetrievalStrategy(ABC):
@@ -136,6 +136,65 @@ async def shutdown_event():
 @app.post("/process-request")
 async def process_request(http_client: aiohttp.ClientSession = Depends(get_http_client)):
     # ... Endpoint logic with error handling ...
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+
+
+
+
+# new element 1
+
+from fastapi import FastAPI, Depends, HTTPException, Request, StreamingResponse
+import aiohttp
+
+app = FastAPI()
+
+@app.on_event("startup")
+async def startup_event():
+    timeout = aiohttp.ClientTimeout(total=30, connect=10, sock_read=10, sock_connect=10)
+    app.state.http_client = aiohttp.ClientSession(http2=True, timeout=timeout)
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await app.state.http_client.close()
+
+async def get_http_client() -> aiohttp.ClientSession:
+    return app.state.http_client
+
+@app.post("/process-request")
+async def process_request(request: Request, http_client: aiohttp.ClientSession = Depends(get_http_client)):
+    # Extract parameters to determine which strategies to use
+    # For example, use JSON body or query parameters to determine strategy
+    body = await request.json()
+    retrieval_type = body.get("retrieval_type", "simple")
+    synthesis_type = body.get("synthesis_type", "simple")
+
+    # Initialize the appropriate strategies
+    if retrieval_type == "advanced":
+        retrieval_strategy = AdvancedRetrievalStrategy(http_client)
+    else:
+        retrieval_strategy = SimpleRetrievalStrategy(http_client)
+
+    if synthesis_type == "complex":
+        synthesis_strategy = ComplexSynthesisStrategy(http_client)
+    else:
+        synthesis_strategy = SimpleSynthesisStrategy(http_client)
+
+    # Use strategies to retrieve document IDs and synthesize a prompt
+    api2_url = body.get("api2_url")
+    document_ids = await retrieval_strategy.retrieve(api2_url)
+    prompt = await synthesis_strategy.synthesize(document_ids)
+
+    # Stream response from another API
+    api3_url = body.get("api3_url")
+    return StreamingResponse(stream_response_from_api3(api3_url, prompt, http_client), media_type="text/plain")
 
 if __name__ == "__main__":
     import uvicorn
