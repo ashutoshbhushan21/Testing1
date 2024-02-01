@@ -1,0 +1,26 @@
+from typing import Dict, Union
+
+class CustomTextSplitter:
+    def __init__(self, splitter_type: SplitterType, splitter_kwargs: dict = None, class_kwargs: dict = None):
+        self.splitter_type = splitter_type
+        self.splitter_kwargs = splitter_kwargs or {}
+        self.class_kwargs = class_kwargs or {}
+        self.splitter = None
+
+    def initialize_splitter(self):
+        if self.splitter_type == SplitterType.SENTENCE_TRANSFORMERS:
+            self.validate_splitter_kwargs(SentenceTransformersTokenTextSplitter)
+            self.splitter = SentenceTransformersTokenTextSplitter(**self.splitter_kwargs, **self.class_kwargs)
+        elif self.splitter_type == SplitterType.RECURSIVE_CHARACTER:
+            self.validate_splitter_kwargs(RecursiveCharacterTextSplitter)
+            self.splitter = RecursiveCharacterTextSplitter(**self.splitter_kwargs, **self.class_kwargs)
+        else:
+            raise ValueError("Invalid splitter_type")
+
+    def validate_splitter_kwargs(self, splitter_class):
+        valid_kwargs = splitter_class.__init__.__code__.co_varnames
+        for key in self.splitter_kwargs:
+            if key not in valid_kwargs:
+                raise ValueError(f"Invalid keyword argument '{key}' for splitter '{splitter_class.__name__}'")
+
+    # Rest of the methods remain the same
