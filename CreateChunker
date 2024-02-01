@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 class CustomTextSplitter:
     def __init__(self, splitter_type: SplitterType, splitter_kwargs: dict = None, class_kwargs: dict = None):
@@ -6,6 +6,26 @@ class CustomTextSplitter:
         self.splitter_kwargs = splitter_kwargs or {}
         self.class_kwargs = class_kwargs or {}
         self.splitter = None
+        self._check_required_libraries()
+        self.initialize_splitter()
+
+    def _check_required_libraries(self):
+        required_libraries = []
+        if self.splitter_type == SplitterType.SENTENCE_TRANSFORMERS:
+            required_libraries.append("sentence_transformers")
+        elif self.splitter_type == SplitterType.RECURSIVE_CHARACTER:
+            required_libraries.append("tiktoken")
+        for library in required_libraries:
+            try:
+                __import__(library)
+            except ImportError:
+                raise ImportError(f"Library '{library}' is required for the chosen splitter_type but is not installed.")
+
+    def validate_splitter_kwargs(self, splitter_class):
+        valid_kwargs = splitter_class.__init__.__code__.co_varnames
+        for key in self.splitter_kwargs:
+            if key not in valid_kwargs:
+                raise ValueError(f"Invalid keyword argument '{key}' for splitter '{splitter_class.__name__}'")
 
     def initialize_splitter(self):
         if self.splitter_type == SplitterType.SENTENCE_TRANSFORMERS:
@@ -17,10 +37,15 @@ class CustomTextSplitter:
         else:
             raise ValueError("Invalid splitter_type")
 
-    def validate_splitter_kwargs(self, splitter_class):
-        valid_kwargs = splitter_class.__init__.__code__.co_varnames
-        for key in self.splitter_kwargs:
-            if key not in valid_kwargs:
-                raise ValueError(f"Invalid keyword argument '{key}' for splitter '{splitter_class.__name__}'")
+    # Rest of the class remains the same
 
-    # Rest of the methods remain the same
+# Usage example:
+splitter = CustomTextSplitter(
+    splitter_type=SplitterType.SENTENCE_TRANSFORMERS,
+    splitter_kwargs={"model_name": "bert-base-uncased"},
+    class_kwargs={"region": "Region1", "doc_id": "Doc1", "section_id": "Section1"}
+)
+
+input_text = "This is a sample text. Split it into chunks."
+result = splitter.split_docs(input_text)
+print(result)
