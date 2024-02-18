@@ -1,0 +1,69 @@
+import streamlit as st
+
+def validate_credentials(username, password):
+    # Dummy function to validate username and password
+    # Replace this with your actual validation logic
+    valid_credentials = {
+        "user1": "password1",
+        "user2": "password2",
+        "user3": "password3"
+    }
+    if username in valid_credentials and valid_credentials[username] == password:
+        return True
+    else:
+        return False
+
+def main():
+    if not st.session_state.get('authenticated'):
+        # Center the login form both horizontally and vertically
+        st.markdown(
+            """
+            <style>
+            .centered {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                -ms-transform: translate(-50%, -50%);
+                width: 300px;
+                padding: 20px;
+                border: 1px solid #ccc;
+                background-color: #f2f2f2;
+                border-radius: 5px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            """
+            <div class="centered">
+                <h2>Login</h2>
+                <form>
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username"><br><br>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password"><br><br>
+                    <input type="button" value="Login" onclick="login()">
+                </form>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        if st.button("Login"):
+            username = st.session_state.username
+            password = st.session_state.password
+
+            if validate_credentials(username, password):
+                st.session_state['authenticated'] = True
+            else:
+                st.error("Invalid username or password. Please try again.")
+    else:
+        # User is authenticated, show main app
+        st.title("Welcome to the App")
+        st.write("This is the main app functionality.")
+
+if __name__ == "__main__":
+    main()
