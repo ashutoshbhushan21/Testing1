@@ -1,0 +1,22 @@
+import streamlit as st
+
+# JavaScript to scroll to the top of the page
+scroll_to_top_script = """
+<script>
+function scroll_to_top() {
+    var inputBox = document.getElementById('input_text');
+    inputBox.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+}
+</script>
+"""
+
+st.title("Auto-Scrolling Example")
+
+# Add the input text box
+input_text = st.text_input("Type something and press Enter", key='input_text')
+
+# Check if Enter key is pressed
+if input_text:
+    if st.button("Submit"):
+        # Execute the JavaScript to scroll to the top
+        st.write(scroll_to_top_script, unsafe_allow_html=True)
