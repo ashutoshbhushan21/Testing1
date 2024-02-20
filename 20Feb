@@ -1,0 +1,205 @@
+import sqlite3
+
+# Function to create a database connection
+def create_connection(db_file):
+    conn = None
+    try:
+        conn = sqlite3.connect(db_file)
+        print(f"SQLite version: {sqlite3.version}")
+        return conn
+    except sqlite3.Error as e:
+        print(e)
+    return conn
+
+# Function to create a database table
+def create_table(conn):
+    try:
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS feedback
+                     (SID TEXT, Timestamp TIMESTAMP, Question TEXT, Answer TEXT, Filter TEXT,
+                      SelectedOptions TEXT, AdditionalComments TEXT)''')
+        print("Table created successfully")
+    except sqlite3.Error as e:
+        print(e)
+
+# Main function to create database and table
+def main():
+    database = "feedback.db"
+    conn = create_connection(database)
+    if conn is not None:
+        create_table(conn)
+        conn.close()
+    else:
+        print("Error! Cannot create the database connection.")
+
+# Run the main function
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+import streamlit as st
+import sqlite3
+from datetime import datetime
+
+# Function to create a database connection
+def create_connection(db_file):
+    conn = None
+    try:
+        conn = sqlite3.connect(db_file)
+        return conn
+    except sqlite3.Error as e:
+        print(e)
+    return conn
+
+# Function to insert feedback into the database
+def insert_feedback(conn, sid, question, answer, filter_val, selected_options, additional_comments):
+    try:
+        c = conn.cursor()
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        c.execute("INSERT INTO feedback (SID, Timestamp, Question, Answer, Filter, SelectedOptions, AdditionalComments) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                  (sid, timestamp, question, answer, filter_val, selected_options, additional_comments))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(e)
+        return False
+
+# Main function
+def main():
+    st.title("Feedback Form")
+    
+    # Create or connect to the database
+    conn = create_connection("feedback.db")
+    
+    # SID input
+    sid = st.text_input("SID")
+    
+    # Question input
+    question = st.text_area("Question")
+    
+    # Answer input
+    answer = st.text_area("Answer")
+    
+    # Filter input
+    filter_val = st.text_input("Filter")
+    
+    # Selected options input
+    selected_options = st.text_input("Selected Options")
+    
+    # Additional comments input
+    additional_comments = st.text_area("Additional Comments")
+    
+    # Submit button
+    if st.button("Submit"):
+        if insert_feedback(conn, sid, question, answer, filter_val, selected_options, additional_comments):
+            st.success("Feedback submitted successfully!")
+        else:
+            st.error("Failed to submit feedback.")
+
+# Run the main function
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import shutil
+
+# Source and destination paths
+source_path = "feedback.db"  # Original database path
+destination_path = "backup/feedback_backup.db"  # Backup database path
+
+# Copy the database file
+shutil.copyfile(source_path, destination_path)
+print("Database backup created successfully at:", destination_path)
+
+
+
+
+
+
+
+
+
+#GEt Into pandas
+
+
+
+
+import sqlite3
+import pandas as pd
+
+# Function to create a database connection
+def create_connection(db_file):
+    conn = None
+    try:
+        conn = sqlite3.connect(db_file)
+        return conn
+    except sqlite3.Error as e:
+        print(e)
+    return conn
+
+# Function to retrieve data from the database and return a Pandas DataFrame
+def get_data(conn, query):
+    try:
+        # Execute the query and fetch the results
+        data = pd.read_sql_query(query, conn)
+        return data
+    except sqlite3.Error as e:
+        print(e)
+        return None
+
+# Main function
+def main():
+    # Create or connect to the database
+    conn = create_connection("feedback.db")
+    
+    if conn is not None:
+        # Define your SQL query
+        query = "SELECT * FROM feedback"
+        
+        # Retrieve data from the database
+        data = get_data(conn, query)
+        
+        # Check if data was retrieved successfully
+        if data is not None:
+            # Display the data
+            print("Data from the database:")
+            print(data)
+        else:
+            print("Failed to retrieve data from the database.")
+        
+        # Close the database connection
+        conn.close()
+    else:
+        print("Error! Cannot create the database connection.")
+
+# Run the main function
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
