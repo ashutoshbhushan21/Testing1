@@ -1,0 +1,152 @@
+from fastapi import FastAPI, Response
+from pydantic import BaseModel
+from typing import Generator, Union
+
+app = FastAPI()
+
+class UIResult(BaseModel):
+    # Define the Pydantic model for your UI result
+    data: str  # example field
+
+class ChatGPTResponse(BaseModel):
+    # Define the Pydantic model for ChatGPT response
+    text: str  # example field
+
+def execute() -> Generator[Union[UIResult, ChatGPTResponse], None, None]:
+    # This function yields a UIResult first, followed by multiple ChatGPTResponses
+    # Start by yielding the UI result
+    yield UIResult(data="Initial UI Data")
+
+    # Then yield ChatGPT responses
+    for i in range(10):  # Example loop
+        yield ChatGPTResponse(text=f"Response {i}")
+
+@app.post("/stream-response/")
+async def stream_response():
+    async def gen():
+        first_yield = True
+        for response in execute():
+            if first_yield:
+                # Assume the first yield is always UIResult and handle it
+                assert isinstance(response, UIResult), "First yield must be UIResult"
+                yield response.json().encode("utf-8") + b"\n"
+                first_yield = False
+            else:
+                # Subsequent yields are treated as ChatGPTResponse
+                assert isinstance(response, ChatGPTResponse), "Subsequent yields must be ChatGPTResponse"
+                yield response.json().encode("utf-8") + b"\n"
+
+    return Response(content=gen(), media_type="application/x-ndjson")
+
+
+
+
+
+import requests
+import json
+
+# Endpoint URL
+url = 'http://your-fastapi-server.com/stream-response/'
+
+# Make a POST request to the endpoint
+response = requests.post(url, stream=True)  # `stream=True` is important for handling the streaming response
+
+try:
+    # Iterate over lines in the response
+    for line in response.iter_lines():
+        # Filter out keep-alive new lines
+        if line:
+            decoded_line = line.decode('utf-8')
+            json_data = json.loads(decoded_line)  # Convert JSON string to Python dictionary
+            print(json_data)
+except requests.exceptions.RequestException as e:
+    print(f"Request failed: {e}")
+
+
+
+
+
+#Updated
+
+from fastapi import FastAPI, Response, HTTPException
+from fastapi.middleware.gzip import GZipMiddleware
+from pydantic import BaseModel
+from typing import Generator, Union
+import orjson
+import logging
+
+app = FastAPI()
+app.add_middleware(GZipMiddleware, minimum_size=1000)  # Enable GZip compression
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class OrjsonBaseModel(BaseModel):
+    class Config:
+        json_loads = orjson.loads
+        json_dumps = orjson_dumps
+
+class UIResult(OrjsonBaseModel):
+    data: str
+
+class ChatGPTResponse(OrjsonBaseModel):
+    text: str
+
+def execute() -> Generator[Union[UIResult, ChatGPTResponse], None, None]:
+    yield UIResult(data="Initial UI Data")
+    for i in range(10):
+        yield ChatGPTResponse(text=f"Response {i}")
+
+@app.post("/stream-response/")
+async def stream_response():
+    async def gen():
+        try:
+            first_yield = True
+            for response in execute():
+                if first_yield:
+                    assert isinstance(response, UIResult), "First yield must be UIResult"
+                    yield response.json().encode("utf-8") + b"\n"
+                    first_yield = False
+                else:
+                    assert isinstance(response, ChatGPTResponse), "Subsequent yields must be ChatGPTResponse"
+                    yield response.json().encode("utf-8") + b"\n"
+        except Exception as e:
+            logger.error(f"Error streaming response: {e}")
+            raise HTTPException(status_code=500, detail="Error streaming response")
+
+    return Response(content=gen(), media_type="application/x-ndjson")
+
+
+
+
+
+
+import requests
+import orjson  # Use orjson for efficient JSON parsing
+
+# Endpoint URL
+url = 'http://your-fastapi-server.com/stream-response/'
+
+# Make a POST request to the endpoint
+response = requests.post(url, stream=True)  # `stream=True` is important for handling the streaming response
+
+try:
+    # Iterate over lines in the response
+    for line in response.iter_lines():
+        # Filter out keep-alive new lines
+        if line:
+            decoded_line = line.decode('utf-8')
+            json_data = orjson.loads(decoded_line)  # Use orjson for parsing JSON
+            print(json_data)
+            # Process each JSON object here
+except requests.exceptions.RequestException as e:
+    print(f"Request failed: {e}")
+except orjson.JSONDecodeError as e:
+    print(f"JSON decode error: {e}")
+
+
+
+
+
+
