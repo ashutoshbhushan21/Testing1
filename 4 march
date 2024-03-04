@@ -1,0 +1,17 @@
+import streamlit as st
+
+# Custom CSS to inject smaller button with smaller text
+button_style = """
+<style>
+.my-small-button .css-1cpxqw2 {
+    padding: 0px 0px; /* Adjust button padding */
+    font-size: 10px; /* Adjust font size */
+}
+</style>
+"""
+
+st.markdown(button_style, unsafe_allow_html=True)
+
+# Using the button with a custom CSS class
+if st.button("Small Button", key="1", **{"class": "my-small-button"}):
+    st.write("Button clicked!")
